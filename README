@@ -1,0 +1,35 @@
+CSC7300 Course project, Sui Chen, 2011 Fall
+Professor Rahul Shah
+12-01-2011
+
+List of files:
+=== Source files and makefile ===
+Makefile
+godhelpme.h
+godhelpme.c		Backward search.
+sort012.h
+sort012.c		Suffix array, BWT, wavelet tree.
+sort012test.c		Program entry point.
+rs/*
+
+=== Test cases ===
+cnn_text		Test file 1, an article from CNN.
+cnn_patterns		Pattern file for cnn_text.
+espn			Test file 2, an article from ESPN.
+lorem			Test file 3, a five-paragraph Lorem Ipsum.
+lorem_patterns		Pattern file for lorem.
+missi			A 20 MB test file, containing repeating "mississippi_".
+missi_patterns		Pattern file for Mississippi.
+missi_patterns_huge	Very big pattern (4000 bytes) for missi.
+nascar			Test file 4, an article about Nascar racing.
+nascar_patterns		Pattern file for nascar.
+peter			Test file 5, a short sentence.
+peter_patterns		Pattern file for peter.
+segfault		Test file 6, an article about Segmentation Fault.
+GEN_HUGE_MISSISSIPPI	Script used to generate "missi". Caution: very slow.
+
+=== How to make ===
+type "make".
+
+=== Notes ===
+Tested on Xubuntu 11.10 64bit

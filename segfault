@@ -1,0 +1,134 @@
+
+Segmentation fault
+From Wikipedia, the free encyclopedia
+  (Redirected from Segmentation Fault)
+"Segfault" redirects here. For the website, see Segfault (website).
+
+This article needs additional citations for verification. Please help improve this article by adding citations to reliable sources. Unsourced material may be challenged and removed. (November 2011)
+
+This article contains instructions, advice, or how-to content. The purpose of Wikipedia is to present facts, not to train. Please help improve this article either by rewriting the how-to content or by moving it to Wikiversity or Wikibooks. (November 2011)
+A segmentation fault (often shortened to segfault), bus error or access violation is generally an attempt to access memory that the CPU cannot physically address. It occurs when the hardware notifies an operating system about a memory access violation. The OS kernel then sends a signal to the process which caused the exception. By default, the process receiving the signal dumps core and terminates. The default signal handler can also be overridden to customize how the signal is handled.[1]
+Contents  [hide] 
+1 Bus error
+2 Segmentation/Page fault / Access violation
+2.1 Common causes
+3 Examples
+3.1 Bus error example
+3.2 Segmentation fault example
+4 See also
+5 References
+6 External links
+[edit]Bus error
+
+Bus errors are usually signaled with the SIGBUS signal, but SIGBUS can also be caused by any general device fault that the computer detects. A bus error rarely means that the computer hardware is physically broken—it is normally caused by a bug in a program's source code.
+There are two main causes of bus errors:
+non-existent address 
+The CPU is instructed by software to read or write a specific physical memory address. Accordingly, the CPU sets this physical address on its address bus and requests all other hardware connected to the CPU to respond with the results, if they answer for this specific address. If no other hardware responds, the CPU raises an exception, stating that the requested physical address is unrecognized by the whole computer system. Note that this only covers physical memory addresses. Trying to access an undefined virtual memory address is generally considered to be a segmentation fault rather than a bus error, though if the MMU is separate, the processor can't tell the difference.
+unaligned access 
+Most CPUs are byte-addressable, where each unique memory address refers to an 8-bit byte. Most CPUs can access individual bytes from each memory address, but they generally cannot access larger units (16 bits, 32 bits, 64 bits and so on) without these units being "aligned" to a specific boundary. For example, if multi-byte accesses must be 16 bit-aligned, addresses 0, 2, 4, and so on would be considered aligned and therefore accessible, while addresses 1, 3, 5, and so on would be considered unaligned. Similarly, if multi-byte accesses must be 32-bit aligned, addresses 0, 4, 8, 12, and so on would be considered aligned and therefore accessible, and all addresses in between would be considered unaligned. Attempting to access a unit larger than a byte at an unaligned address can cause a bus error.
+CPUs generally access data at the full width of their data bus at all times. To address bytes, they access memory at the full width of their data bus, then mask and shift to address the individual byte. This is inefficient, but tolerated as it is an essential feature for most software, especially string processing. Unlike bytes, larger units can span two aligned addresses and would thus require more than one fetch on the data bus. It is possible for CPUs to support this, but this functionality is rarely required directly at the machine code level, thus CPU designers normally avoid implementing it and instead issue bus errors for unaligned memory access.
+[edit]Segmentation/Page fault / Access violation
+
+
+
+Example of human generated signal
+A segmentation fault occurs when a program attempts to access a memory location that it is not allowed to access, or attempts to access a memory location in a way that is not allowed (for example, attempting to write to a read-only location, or to overwrite part of the operating system).
+Segmentation is one approach to memory management and protection in the operating system. It has been superseded by paging for most purposes, but much of the terminology of segmentation is still used, "segmentation fault" being an example. Some operating systems still have segmentation at some logical level although paging is used as the main memory management policy.
+On Unix-like operating systems, a signal called SIGSEGV is sent to a process that accesses an invalid memory address. On Microsoft Windows, a process that accesses invalid memory receives the STATUS_ACCESS_VIOLATION exception.
+[edit]Common causes
+Segmentation fault
+A few causes of a segmentation fault can be summarized as follows:
+attempting to execute a program that does not compile correctly. Note that most compilers will not output a binary given a compile-time error.
+a buffer overflow.
+using uninitialized pointers.
+dereferencing NULL pointers.
+attempting to access memory the program does not own.
+attempting to alter memory the program does not own (storage violation).
+exceeding the allowable stack size (possibly due to runaway recursion or an infinite loop)
+Generally, segmentation faults occur because: a pointer is either NULL, points to random memory (probably never initialized to anything), or points to memory that has been freed/deallocated/"deleted".
+e.g.
+    char *p1 = NULL;           // Initialized to null, which is OK,
+                               // (but cannot be dereferenced on many systems).
+    char *p2;                  // Not initialized at all.
+    char *p3  = new char[20];  // Great! it's allocated,
+    delete [] p3;              // but now it isn't anymore.
+Now, dereferencing any of these variables could cause a segmentation fault.
+Bus error
+A common cause of a bus error (in Linux) that has nothing to do with hardware failure is the following scenario. A binary program is running. As long as this is completely resident in memory, the corresponding executable binary file can be changed 'under the hood' without notice. However, if the binary is large, or there is not enough free memory, some of its pages may have been swapped out. If the paging mechanism subsequently accesses the expected blocks on disk, a bus error ensues because the original executable was replaced by another file. In this case, the SIGBUS signal prevents the execution of random blocks of machine code due to paging.
+[edit]Examples
+
+[edit]Bus error example
+This is an example of un-aligned memory access, written in the C programming language.
+#include <stdlib.h>
+ 
+int main(int argc, char **argv) {
+    int *iptr;
+    char *cptr;
+ 
+#if defined(__GNUC__)
+# if defined(__i386__)
+    /* Enable Alignment Checking on x86 */
+    __asm__("pushf\norl $0x40000,(%esp)\npopf");
+# elif defined(__x86_64__) 
+     /* Enable Alignment Checking on x86_64 */
+    __asm__("pushf\norl $0x40000,(%rsp)\npopf");
+# endif
+#endif
+ 
+    /* malloc() always provides aligned memory */
+    cptr = malloc(sizeof(int) + 1);
+ 
+    /* Increment the pointer by one, making it misaligned */
+    iptr = (int *) ++cptr;
+ 
+    /* Dereference it as an int pointer, causing an unaligned access */
+    *iptr = 42;
+ 
+    return 0;
+}
+Compiling and running the example on Linux on x86 demonstrates the error:
+$ gcc -ansi sigbus.c -o sigbus
+$ ./sigbus 
+Bus error
+$ gdb ./sigbus
+(gdb) r
+Program received signal SIGBUS, Bus error.
+0x080483ba in main ()
+(gdb) x/i $pc
+0x80483ba <main+54>:    mov    DWORD PTR [eax],0x2a
+(gdb) p/x $eax
+$1 = 0x804a009
+(gdb) p/t $eax & (sizeof(int) - 1)
+$2 = 1
+
+The GDB debugger shows that the immediate value 0x2a is being stored at the location stored in the EAX register, using X86 assembly language. This is an example of register indirect addressing.
+Printing the low order bits of the address shows that it is not aligned to a word boundary ("dword" using x86 terminology).
+[edit]Segmentation fault example
+Here is an example of ANSI C code that should create a segmentation fault on platforms with memory protection:
+ int main(void)
+ {
+     char *s = "hello world";
+     *s = 'H';
+ }
+When the program containing this code is compiled, the string "hello world" is placed in the section of the program executable file marked as read-only; when loaded, the operating system places it with other strings and constant data in a read-only segment of memory. When executed, a variable, s, is set to point to the string's location, and an attempt is made to write an H character through the variable into the memory, causing a segmentation fault. Compiling such a program with a compiler that does not check for the assignment of read-only locations at compile time, and running it on a Unix-like operating system produces the following runtime error:
+$ gcc segfault.c -g -o segfault
+$ ./segfault
+Segmentation fault
+
+Backtrace of the core file from gdb:
+Program received signal SIGSEGV, Segmentation fault.
+0x1c0005c2 in main () at segfault.c:6
+6               *s = 'H';
+
+The conditions under which segmentation violations occur and how they manifest themselves are specific to an operating system.
+Because a very common program error is a null pointer dereference (a read or write through a null pointer, used in C to mean "pointer to no object" and as an error indicator), most operating systems map the null pointer's address such that accessing it causes a segmentation fault.
+ int *ptr = NULL;
+ *ptr = 1;
+This sample code creates a null pointer, and tries to assign a value to its non-existent target. Doing so causes a segmentation fault at runtime on many operating systems.
+Another example is recursion without a base case:
+ int main(void)
+ {
+    main();
+    return 0;
+ }
+which causes the stack to overflow which results in a segmentation fault.[2] Note that infinite recursion may not necessarily result in a stack overflow depending on the language, optimizations performed by the compiler and the exact structure of a code. In this case, the behavior of unreachable code (the return statement) is undefined, so the compiler can eliminate it and use a tail call optimization that might result in no stack usage. Other optimizations could include translating the recursion into iteration, which given the structure of the example function would result in the program running forever, while probably not overflowing its stack.

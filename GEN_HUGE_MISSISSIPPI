@@ -1,0 +1,19 @@
+#!/bin/bash
+needle="missi_needles_huge"
+echo "4" > $needle
+for((i=0;i<2000;i++))
+do
+	echo -n "mississippi_" >> $needle
+done
+echo "" >> $needle
+echo "ssi" >> $needle
+echo "ppi" >> $needle
+echo "ssippi" >> $needle
+echo "The huge keywords file is $needle "
+
+corpus="missi"
+for((i=0;i<1666667;i++))
+do
+	echo -n "mississippi_" >> $corpus
+done
+echo "The huge corpus file is $corpus "

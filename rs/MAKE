@@ -1,0 +1,1 @@
+g++ testrankselect.cpp bitarray.cpp -o testrankselect
